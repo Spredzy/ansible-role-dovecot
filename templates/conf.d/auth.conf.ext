@@ -1,0 +1,9 @@
+passdb {
+    driver = {{ dovecot_passdb_driver }}
+    args = {{ dovecot_passdb_args }}
+}
+
+userdb {
+    driver = {{ dovecot_userdb_driver }}
+    args = {{ dovecot_userdb_args }}
+}

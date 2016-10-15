@@ -1,0 +1,18 @@
+{% if dovecot_sql_driver is defined %}
+driver = {{ dovecot_sql_driver }}
+{% endif %}
+{% if dovecot_sql_connect is defined %}
+connect = {{ dovecot_sql_connect }}
+{% endif %}
+{% if dovecot_sql_default_pass_scheme is defined %}
+default_pass_scheme = {{ dovecot_sql_default_pass_scheme }}
+{% endif %}
+{% if dovecot_sql_password_query is defined %}
+password_query = {{ dovecot_sql_password_query }}
+{% endif %}
+{% if dovecot_sql_user_query is defined %}
+user_query = {{ dovecot_sql_user_query }}
+{% endif %}
+{% if dovecot_sql_iterate_query is defined %}
+iterate_query = {{ dovecot_sql_iterate_query }}
+{% endif %}

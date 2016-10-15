@@ -1,0 +1,84 @@
+# Copyright 2016 Yanis Guenane <yanis+ansible@guenane.org>
+# Author: Yanis Guenane <yanis+guenane@guenane.org>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Incluse OS-specific variables
+  include_vars: '{{ ansible_os_family }}.yml'
+
+
+- name: Install the Dovecot IMAP server package
+  package:
+    name: '{{ dovecot_package_name }}'
+
+
+- name: Incluse OS-specific actions
+  include: '{{ ansible_os_family }}.yml'
+
+
+- name: Create vmail user
+  user:
+    name: '{{ dovecot_vmail_user_name | default("vmail") }}'
+    comment: '{{ dovecot_vmail_user_comment | default("vmail") }}'
+    uid: '{{ dovecot_vmail_user_uid | default("5000") }}'
+    shell: '{{ dovecot_vmail_user_shell | default("/usr/sbin/nologin") }}'
+    home: '{{ dovecot_vmail_user_home | default("/srv/mail") }}'
+    createhome: '{{ dovecot_vmail_user_createhome | default("yes") }}'
+  when: dovecot_create_vmail_user == True
+
+
+# SQL Authentication System
+#
+- name: Create the dovecot-sql.conf.ext if needed
+  template:
+    src: dovecot-sql.conf.ext
+    dest: '{{ dovecot_configuration_file_path}}/dovecot-sql.conf.ext'
+  notify: restart dovecot
+
+
+- name: Create the desired authentication system configuration file
+  template:
+    src: conf.d/auth.conf.ext
+    dest: '{{ dovecot_configuration_file_path}}/conf.d/auth.conf.ext'
+  notify: restart dovecot
+
+
+- name: Enable the desired authentication system configuration file
+  lineinfile:
+    dest: '{{ dovecot_configuration_file_path}}/conf.d/10-auth.conf'
+    line: '!include auth.conf.ext'
+  notify: restart dovecot
+
+
+- name: Disable default authentication system file
+  lineinfile:
+    dest: '{{ dovecot_configuration_file_path}}/conf.d/10-auth.conf'
+    regexp: '!include auth-system.conf.ext'
+    line: '#!include auth-system.conf.ext'
+  notify: restart dovecot
+
+
+- name: Apply specified settings in local.conf
+  lineinfile:
+    dest: '{{ dovecot_configuration_file_path }}/local.conf'
+    line: '{{ item.key }} = {{ item.value }}'
+  with_dict: '{{ dovecot_settings }}'
+  notify: reload dovecot
+
+
+- name: Start the dovecot server service
+  service:
+    name: '{{ dovecot_service_name }}'
+    state: started
+    enabled: yes
